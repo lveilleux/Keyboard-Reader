@@ -112,19 +112,35 @@ void KeyboardReader::ResetEffects(UINT DeviceType) {
 
 
 BOOL KeyboardReader::flash_word(std::string word) {
-	std::cout << " Result: " << word;
+	if (word.size() == 0) {
+		return NULL;
+	}
 	RZRESULT Result_Keyboard;
 	ChromaSDK::Keyboard::CUSTOM_EFFECT_TYPE keyboard_effect;
-	keyboard_effect = this->set_background_effect();
-
 	//Custom Color the Chroma Keyboard
-	for (char c : word) {
-		cout << c;
-		//Result_Keyboard = CreateKeyboardEffect(ChromaSDK::Keyboard::CHROMA_CUSTOM, &keyboard_effect, NULL);
+	for (char& c : word) {
+		long key;
+		//Clear the keyboard in case of doubled keys (ie. "follow")
+		keyboard_effect = this->set_background_effect();
+		Result_Keyboard = CreateKeyboardEffect(ChromaSDK::Keyboard::CHROMA_CUSTOM, &keyboard_effect, NULL);
+		Sleep(50);
+		if (isalpha(c)) {
+			c = toupper(c);
+			key = RAZER_KEYS[c - 'A'];
+			keyboard_effect.Color[key >> 8][key & 0xFF] = HIGHLIGHT;
+		}
+		else if (isdigit(c)) {
+			key = RAZER_KEYS[c - '0' + 25]; //Offset for using the end of the RAZER_KEYS Array
+			keyboard_effect.Color[key >> 8][key & 0xFF] = HIGHLIGHT;
+		}
+		Result_Keyboard = CreateKeyboardEffect(ChromaSDK::Keyboard::CHROMA_CUSTOM, &keyboard_effect, NULL);
+		Sleep(250);
 	}
-
-	//return Result_Keyboard;
-	return FALSE;
+	//Clear the keyboard
+	keyboard_effect = this->set_background_effect();
+	Result_Keyboard = CreateKeyboardEffect(ChromaSDK::Keyboard::CHROMA_CUSTOM, &keyboard_effect, NULL);
+	Sleep(700);
+	return Result_Keyboard;
 }
 
 ChromaSDK::Keyboard::CUSTOM_EFFECT_TYPE KeyboardReader::set_background_effect() {
@@ -145,21 +161,41 @@ int main() {
 
 	KeyboardReader reader;
 	BOOL test_for_init = reader.Initialize();
-	cout << "Enter a filename: ";
-	std::string fileName, line;
-	cin >> fileName;
-	cout << "\n";
-	ifstream file(fileName, ios::in);
-
-	if (file.is_open()) {
-		while (getline(file, line)) {
-			cout << line << '\n';
+	while (true) {
+		cout << "Enter a filename (or EXIT to exit): ";
+		std::string fileName, line;
+		cin >> fileName;
+		cout << "\n";
+		if (fileName == "EXIT") {
+			return 0;
 		}
-		file.close();
+		ifstream file(fileName, ios::in);
+
+		if (file.is_open()) {
+			while (getline(file, line)) {
+				std::string word;
+				cout << line << '\n';
+				bool printedLast = false;
+				for (char& c : line) {
+					if (iscntrl(c) || isspace(c) || ispunct(c)) {
+						reader.flash_word(word);
+						word = "";
+						printedLast = true;
+					}
+					else {
+						word += c;
+						printedLast = false;
+					}
+				}
+				if (!printedLast) {
+					reader.flash_word(word);
+				}
+			}
+			file.close();
+		}
+		else {
+			cout << "Invalid filename/couldn't open file\n";
+		}
 	}
-	else {
-		cout << "Invalid filename/couldn't open file";
-	}
-	cin >> fileName;
 	return 0;
 }

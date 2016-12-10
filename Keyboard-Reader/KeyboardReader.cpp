@@ -133,6 +133,10 @@ BOOL KeyboardReader::flash_word(std::string word) {
 			key = RAZER_KEYS[c - '0' + 25]; //Offset for using the end of the RAZER_KEYS Array
 			keyboard_effect.Color[key >> 8][key & 0xFF] = HIGHLIGHT;
 		}
+		else if (ispunct(c)) {
+			key = RAZER_KEYS[c - ',' + 36]; //Offset for using end of RAZER_KEYS Array
+			keyboard_effect.Color[key >> 8][key & 0xFF] = HIGHLIGHT;
+		}
 		Result_Keyboard = CreateKeyboardEffect(ChromaSDK::Keyboard::CHROMA_CUSTOM, &keyboard_effect, NULL);
 		Sleep(250);
 	}
@@ -166,7 +170,7 @@ int main() {
 		std::string fileName, line;
 		cin >> fileName;
 		cout << "\n";
-		if (fileName == "EXIT") {
+		if (fileName == "EXIT" || fileName == "") {
 			return 0;
 		}
 		ifstream file(fileName, ios::in);
@@ -177,7 +181,12 @@ int main() {
 				cout << line << '\n';
 				bool printedLast = false;
 				for (char& c : line) {
-					if (iscntrl(c) || isspace(c) || ispunct(c)) {
+					if (iscntrl(c) || isspace(c)) {
+						reader.flash_word(word);
+						word = "";
+						printedLast = true;
+					}
+					else if (ispunct(c) && (c != '.' && c != ',' && c != '-')) {
 						reader.flash_word(word);
 						word = "";
 						printedLast = true;

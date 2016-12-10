@@ -134,7 +134,12 @@ BOOL KeyboardReader::flash_word(std::string word) {
 			keyboard_effect.Color[key >> 8][key & 0xFF] = HIGHLIGHT;
 		}
 		else if (ispunct(c)) {
-			key = RAZER_KEYS[c - ',' + 36]; //Offset for using end of RAZER_KEYS Array
+			if (c == '\'') {
+				key = RAZER_KEYS[39];
+			}
+			else {
+				key = RAZER_KEYS[c - ',' + 36]; //Offset for using end of RAZER_KEYS Array
+			}
 			keyboard_effect.Color[key >> 8][key & 0xFF] = HIGHLIGHT;
 		}
 		Result_Keyboard = CreateKeyboardEffect(ChromaSDK::Keyboard::CHROMA_CUSTOM, &keyboard_effect, NULL);
@@ -166,14 +171,14 @@ int main() {
 	KeyboardReader reader;
 	BOOL test_for_init = reader.Initialize();
 	while (true) {
-		cout << "Enter a filename (or EXIT to exit): ";
+		cout << "Enter a filename in the text folder (or EXIT to exit): ";
 		std::string fileName, line;
 		cin >> fileName;
 		cout << "\n";
 		if (fileName == "EXIT" || fileName == "") {
 			return 0;
 		}
-		ifstream file(fileName, ios::in);
+		ifstream file("text/" + fileName, ios::in);
 
 		if (file.is_open()) {
 			while (getline(file, line)) {
@@ -186,7 +191,7 @@ int main() {
 						word = "";
 						printedLast = true;
 					}
-					else if (ispunct(c) && (c != '.' && c != ',' && c != '-')) {
+					else if (ispunct(c) && (c != '.' && c != ',' && c != '-' && c != '\'')) {
 						reader.flash_word(word);
 						word = "";
 						printedLast = true;
